@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>投稿一覧</title>
+</head>
+<body>
+
+<h1>投稿一覧</h1>
+
+{% if posts %}
+    <ul>
+        {% for post in posts %}
+            <li>
+                <h3>{{ post.shop_name }}（{{ post.genre }}）</h3>
+                <p>場所：{{ post.location }}</p>
+                <p>感想：{{ post.menu }}</p>
+                {% if post.photo %}
+                    <img src="{{ post.photo.url }}" width="200">
+                {% endif %}
+                <p>投稿日：{{ post.created }}</p>
+                  <!-- ⭐ 詳細ページへ飛ぶボタン -->
+                <form action="{% url 'mychat:detail' post.id %}" method="get">
+                    <button type="submit">詳細を見る</button>
+                </form>
+
+                <hr>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>まだ投稿がありません</p>
+{% endif %}
+
+<p><a href="{% url 'mychat:main' %}">メインへ戻る</a></p>
+
+</body>
+</html>

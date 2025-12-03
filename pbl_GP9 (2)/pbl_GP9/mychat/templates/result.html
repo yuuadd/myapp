@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>投稿完了</title>
+</head>
+<body>
+
+<h1>投稿が完了しました！</h1>
+
+<p>店名：{{ post.shop_name }}</p>
+<p>ジャンル：{{ post.genre }}</p>
+
+{% if post.photo %}
+   <p>写真:</p>
+    <img src="{{ post.photo.url }}" alt="写真" style="max-width:400px;">
+{% endif %}
+
+
+<p><a href="{% url 'mychat:main' %}">メインへ戻る</a></p>
+
+</body>
+</html>

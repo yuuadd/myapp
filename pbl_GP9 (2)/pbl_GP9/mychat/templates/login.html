@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン画面</title>
+</head>
+<body>
+    <h1>ログイン</h1>
+
+    {% if error_messages %}
+        <ul>
+        {% for msg in error_messages %}
+            <li style="color:red">{{ msg }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <label>ユーザ名: <input type="text" name="name" size="15"></label><br>
+        <label>パスワード: <input type="password" name="password" size="15"></label><br>
+        <input type="hidden" name="login" value="on">
+        <input type="submit" value="ログイン">
+    </form>
+
+    <a href="{% url 'mychat:start' %}">戻る</a>
+</body>
+</html>
+

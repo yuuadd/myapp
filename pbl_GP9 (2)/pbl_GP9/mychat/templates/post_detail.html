@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>投稿詳細</title>
+</head>
+<body>
+
+<h1>{{ post.shop_name }} の詳細</h1>
+
+<p><strong>ジャンル：</strong> {{ post.genre }}</p>
+<p><strong>場所：</strong> {{ post.location }}</p>
+<p><strong>感想：</strong> {{ post.menu }}</p>
+
+{% if post.photo %}
+    <p><img src="{{ post.photo.url }}" width="300"></p>
+{% endif %}
+
+<p><strong>投稿者：</strong> {{ post.user }}</p>
+<p><strong>投稿日：</strong> {{ post.created }}</p>
+
+<p><a href="{% url 'mychat:list' %}">一覧に戻る</a></p>
+
+</body>
+</html>

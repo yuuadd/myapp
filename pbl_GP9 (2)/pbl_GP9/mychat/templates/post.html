@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>投稿内容記入</title>
+</head>
+<body>
+    <h1>投稿内容記入</h1>
+
+    {% if back_to == "search" %}
+        <a href="{% url 'mychat:search' %}">戻る</a>
+    {% elif back_to == "recom" %}
+        <a href="{% url 'mychat:recom' %}">戻る</a>
+    {% else %}
+        <a href="{% url 'mychat:recom' %}">戻る</a>
+    {% endif %}
+</body>
+</html>

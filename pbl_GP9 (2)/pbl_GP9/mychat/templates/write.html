@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>お店の投稿</title>
+    <style>
+        /* 候補リストのスタイル */
+        #shop_suggestions div {
+            padding: 4px;
+            cursor: pointer;
+        }
+        #shop_suggestions div:hover {
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1>お店の投稿</h1>
+
+    <form action="{% url 'mychat:result' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- 店の名前（手入力＋候補表示） -->
+        <p>店の名前（必須）<br>
+            <input type="text" id="shop_name" name="shop_name" autocomplete="off" required>
+            <div id="shop_suggestions" style="border:1px solid #ccc; display:none; position:absolute; background:#fff; max-height:150px; overflow-y:auto;"></div>
+        </p>
+
+        <!-- ジャンル -->
+        <p>店のジャンル（必須）<br>
+            <input type="text" name="genre" id="genre" required>
+        </p>
+
+        <!-- 写真 -->
+        <p>写真（必須）<br>
+            <input type="file" name="photo" accept="image/*" required>
+        </p>
+
+        <!-- 感想 -->
+        <p>感想<br>
+            <textarea name="menu" rows="4" cols="40"></textarea>
+        </p>
+
+        <input type="hidden" name="from" value="{{ back_to }}">
+
+        <button type="submit">投稿する</button>
+    </form>
+
+    <p><a href="{% url 'mychat:main' %}">戻る</a></p>
+
+    <script>
+        // Djangoから渡された店舗データをJS配列に変換
+        const shops = [
+            {% for shop in shops %}
+            { name: "{{ shop.name }}", genre: "{{ shop.genre }}" },
+            {% endfor %}
+        ];
+
+        const shopInput = document.getElementById('shop_name');
+        const genreInput = document.getElementById('genre');
+        const suggestionBox = document.getElementById('shop_suggestions');
+
+        shopInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            suggestionBox.innerHTML = '';
+
+            if (!query) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            const matches = shops.filter(shop => shop.name.toLowerCase().includes(query));
+
+            matches.forEach(shop => {
+                const div = document.createElement('div');
+                div.textContent = shop.name;
+                div.addEventListener('click', () => {
+                    shopInput.value = shop.name;
+                    genreInput.value = shop.genre;
+                    suggestionBox.style.display = 'none';
+                });
+                suggestionBox.appendChild(div);
+            });
+
+            suggestionBox.style.display = matches.length ? 'block' : 'none';
+        });
+
+        // フォーカス外で候補を非表示
+        document.addEventListener('click', function(e) {
+            if (!suggestionBox.contains(e.target) && e.target !== shopInput) {
+                suggestionBox.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

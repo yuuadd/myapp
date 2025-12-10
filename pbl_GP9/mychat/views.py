@@ -7,6 +7,8 @@ from .models import Shop
 def startView(request):
     return render(request, 'start.html')
 
+
+#ユーザ登録処理
 def createUser(request):
     error_messages = []
 
@@ -39,6 +41,8 @@ def createUser(request):
     }
     return render(request, "signup.html", context)
 
+
+#ログイン処理を行う関数
 def loginView(request):
     error_messages = []
 

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from .models import User, Room
 from .models import Post
 from .models import Shop
+import urllib.parse
 
 
 def startView(request):
@@ -98,7 +99,7 @@ def loginView(request):
 
     #クッキーにユーザ名を設定してメイン画面へ
     response = redirect('mychat:main')
-    response.set_cookie('USER', user_name)
+    response.set_cookie('USER', urllib.parse.quote(user_name))
     return response
 
 def main(request):

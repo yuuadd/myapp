@@ -2,12 +2,15 @@ from django.db import models
 from django.conf import settings
 
 
+
+#
 class Room(models.Model):
     name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
 
+#ユーザのモデル
 class User(models.Model):
     name = models.CharField(max_length=20, null=False, blank=False)
     password = models.CharField(max_length=20, null=False, blank=False)
@@ -17,6 +20,8 @@ class User(models.Model):
     def __str__(self):
         return self.name
 
+#投稿のモデル
+#名前、ジャンル、場所、写真、メニュー、訪問日、投稿日時
 class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     shop_name = models.CharField(max_length=100, blank=True, null=True)

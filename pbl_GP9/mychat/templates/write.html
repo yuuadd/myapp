@@ -1,97 +1,192 @@
 <!DOCTYPE html>
-<!--お店の投稿画面-->
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>お店の投稿</title>
-    <style>
-        /* 候補リストのスタイル */
-        #shop_suggestions div {
-            padding: 4px;
-            cursor: pointer;
-        }
-        #shop_suggestions div:hover {
-            background-color: #eee;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>新規投稿</title>
+<style>
+
+/* ==== ヘッダー ==== */
+.header {
+    width: 100%;
+    padding: 15px 20px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    display: flex;              /* 横並びにする */
+    align-items: center;
+    font-size: 28px;
+    font-weight: 900;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* 戻るボタン（矢印のみ） */
+.back-btn {
+    font-size: 28px;
+    color: #3897f0;
+    text-decoration: none;
+    margin-right: 15px;         /* 「新規投稿」との間に余白 */
+    transition: all 0.2s ease;
+}
+.back-btn:active {
+    transform: translateY(2px) scale(0.95);
+    color: #fffdd0;
+}
+
+body {
+    margin: 0;
+    background: #fafafa;
+    font-family: "Hiragino Kaku Gothic ProN","メイリオ",sans-serif;
+}
+
+/* 投稿カード全体 */
+.post-card {
+    background: #fff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    width: 85%;
+    max-width: 1200px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin: 40px auto;
+}
+
+/* 2カラムレイアウト */
+.form-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* 左カラム */
+.left-column {
+    flex: 1;
+}
+
+/* 右カラム */
+.right-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 入力欄 */
+p {
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+input[type="text"], textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #dbdbdb;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 5px;
+}
+textarea {
+    resize: none;
+}
+
+/* 写真選択 */
+input[type="file"] {
+    margin-top: 10px;
+}
+
+/* プレビュー画像 */
+#preview {
+    margin-top: 15px;
+    max-width: 100%;
+    border-radius: 8px;
+    display: none; /* 初期は非表示 */
+}
+
+/* 投稿ボタンを右下に配置 */
+.button-container {
+    display: flex;
+    justify-content: flex-end; /* 右ぞろえ */
+    margin-top: 20px;
+}
+
+button {
+    padding: 14px 28px;        /* 少し大きめ */
+    font-size: 18px;
+    border: none;
+    border-radius: 30px;
+    background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s ease; /* アニメーションを滑らかに */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2); /* 通常時の影 */
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+/* 押したときの沈み込みアニメーション */
+button:active {
+    transform: translateY(3px) scale(0.97); /* 下に沈む＋少し縮む */
+    box-shadow: 0 2px 3px rgba(0,0,0,0.2);  /* 影を弱める */
+}
+</style>
 </head>
 <body>
-    <h1>お店の投稿</h1>
+    <!-- ヘッダー -->
+    <div class="header">
+        <a href="{% url 'mychat:main' %}" class="back-btn">←</a>
+        <div>新規投稿</div>
+    </div>
 
-    <form action="{% url 'mychat:result' %}" method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
+    <!-- 投稿カード -->
+    <div class="post-card">
+        <form action="{% url 'mychat:result' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-container">
+                <!-- 左カラム -->
+                <div class="left-column">
+                    <p><B>店の名前（必須）</B><br>
+                        <input type="text" id="shop_name" name="shop_name" autocomplete="off" required>
+                        <div id="shop_suggestions"></div>
+                    </p>
+                    <p><B>店のジャンル（必須）</B><br>
+                        <input type="text" name="genre" id="genre" required>
+                    </p>
+                    <p><B>感想</B><br>
+                        <textarea name="menu" rows="6"></textarea>
+                    </p>
+                </div>
 
-        <!-- 店の名前（手入力＋候補表示） -->
-        <p>店の名前（必須）<br>
-            <input type="text" id="shop_name" name="shop_name" autocomplete="off" required>
-            <div id="shop_suggestions" style="border:1px solid #ccc; display:none; position:absolute; background:#fff; max-height:150px; overflow-y:auto;"></div>
-        </p>
+                <!-- 右カラム -->
+                <div class="right-column">
+                    <p><B>写真（必須）</B><br>
+                        <input type="file" name="photo" accept="image/*" required onchange="previewImage(event)">
+                        <img id="preview" alt="選択した画像のプレビュー">
+                    </p>
+                </div>
+            </div>
 
-        <!-- ジャンル -->
-        <p>店のジャンル（必須）<br>
-            <input type="text" name="genre" id="genre" required>
-        </p>
-
-        <!-- 写真 -->
-        <p>写真（必須）<br>
-            <input type="file" name="photo" accept="image/*" required>
-        </p>
-
-        <!-- 感想 -->
-        <p>感想<br>
-            <textarea name="menu" rows="4" cols="40"></textarea>
-        </p>
-
-        <input type="hidden" name="from" value="{{ back_to }}">
-
-        <button type="submit">投稿する</button>
-    </form>
-
-    <p><a href="{% url 'mychat:main' %}">戻る</a></p>
+            <!-- 投稿ボタンを右下に -->
+            <div class="button-container">
+                <button type="submit">投稿する</button>
+            </div>
+        </form>
+    </div>
 
     <script>
-        // Djangoから渡された店舗データをJS配列に変換
-        const shops = [
-            {% for shop in shops %}
-            { name: "{{ shop.name }}", genre: "{{ shop.genre }}" },
-            {% endfor %}
-        ];
-
-        const shopInput = document.getElementById('shop_name');
-        const genreInput = document.getElementById('genre');
-        const suggestionBox = document.getElementById('shop_suggestions');
-
-        shopInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            suggestionBox.innerHTML = '';
-
-            if (!query) {
-                suggestionBox.style.display = 'none';
-                return;
+        // 写真プレビュー表示
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('preview');
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
             }
-
-            const matches = shops.filter(shop => shop.name.toLowerCase().includes(query));
-
-            matches.forEach(shop => {
-                const div = document.createElement('div');
-                div.textContent = shop.name;
-                div.addEventListener('click', () => {
-                    shopInput.value = shop.name;
-                    genreInput.value = shop.genre;
-                    suggestionBox.style.display = 'none';
-                });
-                suggestionBox.appendChild(div);
-            });
-
-            suggestionBox.style.display = matches.length ? 'block' : 'none';
-        });
-
-        // フォーカス外で候補を非表示
-        document.addEventListener('click', function(e) {
-            if (!suggestionBox.contains(e.target) && e.target !== shopInput) {
-                suggestionBox.style.display = 'none';
-            }
-        });
+        }
     </script>
 </body>
 </html>

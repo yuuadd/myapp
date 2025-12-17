@@ -1,39 +1,180 @@
 <!DOCTYPE html>
-<!--投稿一覧画面-->
 <html>
 <head>
     <meta charset="UTF-8">
     <title>投稿一覧</title>
+
+<style>
+/* ==== ヘッダー ==== */
+.header {
+    width: 100%;
+    padding: 15px 20px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between; /* 左右に分ける */
+    align-items: center;
+    font-size: 28px;
+    font-weight: 900;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* 左側（戻る矢印＋タイトル） */
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+/* 戻るボタン（矢印のみ） */
+.back-btn {
+    font-size: 28px;
+    color: #3897f0;
+    text-decoration: none;
+    margin-right: 15px;
+    transition: all 0.2s ease;
+}
+.back-btn:active {
+    transform: translateY(2px) scale(0.95);
+    color: #fffdd0;
+}
+/* 右側アイコン */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;              /* アイコン同士の間隔 */
+    padding-right: 30px;    /* 右端に余白を追加 */
+}
+
+.header-right a {
+    font-size: 24px;        /* 少し小さめにして見切れ防止 */
+    text-decoration: none;
+    color: #3897f0;
+    transition: all 0.2s ease;
+}
+.header-right a:active {
+    transform: translateY(2px) scale(0.95);
+    color: #fffdd0;
+}
+
+
+body {
+    margin: 0;
+    background: #fafafa;
+    font-family: "Hiragino Kaku Gothic ProN","メイリオ",sans-serif;
+}
+
+/* 投稿リスト */
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+li {
+    border-bottom: 1px solid #ddd;
+    padding: 20px 20px 60px; 
+    position: relative;
+}
+
+/* 投稿アイテムを横並びに */
+.post-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+/* 画像を左側に大きく */
+.post-item img {
+    width: 350px;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+/* テキスト情報を中央に */
+.post-info {
+    flex: 1;
+    min-width: 0;
+}
+.post-info h3 {
+    margin: 0 0 8px;
+    font-size: 25px;
+}
+.post-info p {
+    margin: 6px 0;
+    font-size: 18px;
+    color: #333;
+}
+
+/* 詳細ボタンを右下に固定配置 */
+.post-action {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+}
+.post-action button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    font-size: 20px;
+    background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+.post-action button:hover {
+    opacity: 0.9;
+}
+.post-action button:active {
+    transform: translateY(3px) scale(0.97);
+    box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+}
+</style>
+
 </head>
 <body>
-
-<h1>投稿一覧</h1>
+    <div class="header">
+        <!-- 左側 -->
+        <div class="header-left">
+            <a href="{% url 'mychat:main' %}" class="back-btn">←</a>
+            <div>投稿一覧</div>
+        </div>
+        <!-- 右側 -->
+        <div class="header-right">
+            <a href="{% url 'mychat:main' %}">🏠</a>
+            <a href="{% url 'mychat:write' %}">➕</a>
+        </div>
+    </div>
 
 {% if posts %}
     <ul>
         {% for post in posts %}
             <li>
-                <h3>{{ post.shop_name }}（{{ post.genre }}）</h3>
-                <p>場所：{{ post.location }}</p>
-                <p>感想：{{ post.menu }}</p>
-                {% if post.photo %}
-                    <img src="{{ post.photo.url }}" width="200">
-                {% endif %}
-                <p>投稿日：{{ post.created }}</p>
-                  <!-- ⭐ 詳細ページへ飛ぶボタン -->
-                <form action="{% url 'mychat:detail' post.id %}" method="get">
-                    <button type="submit">詳細を見る</button>
-                </form>
-
-                <hr>
+                <div class="post-item">
+                    {% if post.photo %}
+                        <img src="{{ post.photo.url }}" alt="投稿画像">
+                    {% endif %}
+                    <div class="post-info">
+                        <h3>{{ post.shop_name }}（{{ post.genre }}）</h3>
+                        <p><b>場所：</b>{{ post.location }}</p>
+                        <p><b>感想：</b>{{ post.menu }}</p>
+                        <p><b>投稿日：</b>{{ post.created }}</p>
+                    </div>
+                </div>
+                <div class="post-action">
+                    <form action="{% url 'mychat:detail' post.id %}" method="get">
+                        <button type="submit">詳細を見る</button>
+                    </form>
+                </div>
             </li>
         {% endfor %}
     </ul>
 {% else %}
-    <p>まだ投稿がありません</p>
+    <p style="padding: 20px;">まだ投稿がありません</p>
 {% endif %}
-
-<p><a href="{% url 'mychat:main' %}">メインへ戻る</a></p>
 
 </body>
 </html>

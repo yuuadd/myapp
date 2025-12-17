@@ -103,6 +103,36 @@ def loginView(request):
 
 
 def main(request):
+    
+    # Shop表示用の初期データを作成
+    initial_shops = [
+        {"name": "竹よし ラーメンハウス",
+         "genre": "ラーメン店、ランチ、ディナー",
+         "location": "宮の森町3丁目9-4",
+         "rest": "月曜日",
+         "time": "11時00分~15時20分,17時00分~20時20分",
+         "tel":"0143-47-2888"},
+        
+        {"name": "やきとりの一平 學亭",
+         "genre": "焼き鳥店、ランチ、ディナー",
+         "location": "高砂町5丁目6-17 コーポ5in 1F",
+         "rest": "不定休",
+         "time": "11時00分~14時00分,17時00分~22時00分",
+         "tel": "0143-41-0550"},
+        
+        {"name": "焼肉徳寿 室蘭店",
+         "genre": "焼肉店、ランチ、ディナー",
+         "location": "中島本町1丁目6-3",
+         "rest": "不定休",
+         "time": "(日～金)11時00分~22時30分、(土)11時00分~23時00分",
+         "tel": "0143-41-1129"},
+        
+    ]
+    for shop in initial_shops:
+        # データベースに店が存在しない場合のみ登録
+        if not Shop.objects.filter(name=shop["name"]).exists():
+            Shop.objects.create(**shop)
+    
     return render(request, 'main.html')
 
 def mapView(request):
@@ -138,8 +168,6 @@ def searchView(request):
             
     # 検索結果を表示
     #postは投稿一覧、qは検索ワード
-    print("検索ワード:", keyword)
-    print("全投稿:", list(Post.objects.values()))
     return render(request, 'search.html', {
         "posts": posts,
         "q":keyword,
@@ -175,19 +203,13 @@ def resultView(request):
 
 # 投稿編集画面表示
 def writeView(request):
-    # shop表示用の初期データ
-    initial_shops = [
-        {"name": "サイノ", "genre": "カレー", "location": "室蘭", "rest": "不定休", "time": "11時00分~15時00分,17時00分~22時00分", "tel":"0143-83-6298"},
-        {"name": "アスコット", "genre": "レストラン", "location": "室蘭", "rest": "木曜日", "time": "11時30分~14時30分,17時30分~20時30分", "tel": "0143-44-1560"},
-        {"name": "一平", "genre": "焼き鳥", "location": "室蘭", "rest": "不定休", "time": "11時00分~14時00分,17時00分~22時00分", "tel": "0143-41-0550"},
-        
-    ]
-    for shop in initial_shops:
-        if not Shop.objects.filter(name=shop["name"]).exists():
-            Shop.objects.create(**shop)
 
-    shops = list(Shop.objects.all().values("name", "genre", "location","rest","time","tel"))
+    # 登録されている店の一覧を取得
+    shops = list(Shop.objects.all().values(
+        "name", "genre", "location","rest","time","tel"
+    ))
     
+    # 戻り先URLを取得（デフォルトは'main'）
     back_to = request.GET.get("from", "main")
     return render(request, "write.html", {
         "shops": shops,
@@ -201,9 +223,11 @@ def postListView(request):
     return render(request, 'post_list.html', {"posts": posts})
 
 
-# 投稿された店の詳細を表示する
+# 投稿された投稿の詳細を表示する
 def postDetailView(request, post_id):
+    # 投稿情報を取得
     post = Post.objects.get(id=post_id)
+    # 投稿された店の詳細情報を取得
     shop = Shop.objects.filter(name=post.shop_name).first()
 
     return render(request, 'post_detail.html', {
@@ -211,3 +235,10 @@ def postDetailView(request, post_id):
         "shop": shop,
     })
 
+def shopDetailView(request, shop_id):
+    # 店の詳細情報を取得
+    shop = Shop.objects.get(id=shop_id)
+
+    return render(request, 'shop_detail.html', {
+        "shop": shop,
+    })

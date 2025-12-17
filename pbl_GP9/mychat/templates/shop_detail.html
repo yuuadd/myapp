@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ shop.name }}</title>
+</head>
+<body>
+
+<h1>{{ shop.name }}</h1>
+
+<p><strong>ジャンル：</strong> {{ shop.genre }}</p>
+<p><strong>場所：</strong> {{ shop.location }}</p>
+<p><strong>定休日：</strong> {{ shop.rest }}</p>
+<p><strong>営業時間：</strong> {{ shop.time }}</p>
+<p><strong>電話番号：</strong> {{ shop.tel }}</p>
+
+<p><a href="{% url 'mychat:main' %}">戻る</a></p>
+
+</body>
+</html>

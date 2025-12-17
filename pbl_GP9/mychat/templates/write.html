@@ -154,6 +154,18 @@ button:active {
                     <p><B>店のジャンル（必須）</B><br>
                         <input type="text" name="genre" id="genre" required>
                     </p>
+                    <p><b>場所</b><br>
+                        <input type="text" name="location" id="location">
+                    </p>
+                    <p><b>定休日</b><br>
+                        <input type="text" name="rest" id="rest"> 
+                    </p>
+                    <p><b>営業時間</b><br>
+                        <input type="text" name="time" id="time">
+                    </p>
+                    <p><b>電話番号</b><br>
+                        <input type="text" name="tel" id="tel">
+                    </p>
                     <p><B>感想</B><br>
                         <textarea name="menu" rows="6"></textarea>
                     </p>
@@ -176,6 +188,51 @@ button:active {
     </div>
 
     <script>
+        //店の情報取得
+        const shops = {{ shops|safe }};
+        // 店名入力欄とサジェストボックスの取得
+        const shopInput = document.getElementById('shop_name');
+        const suggestionBox = document.getElementById("shop_suggestions");
+
+        // 店名入力時の処理(この中は入力中の処理)
+        shopInput.addEventListener('input', function() {
+            // 入力値を取得
+            const keyword = shopInput.value;
+            suggestionBox.innerHTML = '';
+
+            if (keyword.length === 0) {
+                return; // 入力が空の場合は何もしない
+            }
+
+            // 入力値に部分一致する店を検索
+            const matches = shops.filter(shop =>
+                shop.name.includes(keyword)
+            );
+
+            // サジェストボックスに候補を表示
+            matches.forEach(shop =>{
+                // 候補要素を作成
+                const div = document.createElement('div');
+                div.textContent = shop.name;
+                div.style.cursor = 'pointer';
+
+                // 候補クリック時の処理
+                div.onclick = function() {
+                    // 店名と詳細情報を入力欄にセット
+                    shopInput.value = shop.name;
+                    document.getElementById('genre').value = shop.genre;
+                    document.getElementById('location').value = shop.location;
+                    document.getElementById('rest').value = shop.rest;
+                    document.getElementById('time').value = shop.time;
+                    document.getElementById('tel').value = shop.tel;
+                    suggestionBox.innerHTML = ''; // サジェストをクリア
+                };
+                // サジェストボックスに追加
+                suggestionBox.appendChild(div);
+            });
+        });
+
+            
         // 写真プレビュー表示
         function previewImage(event) {
             const file = event.target.files[0];

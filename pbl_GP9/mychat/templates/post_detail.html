@@ -19,6 +19,15 @@
 <p><strong>投稿者：</strong> {{ post.user }}</p>
 <p><strong>投稿日：</strong> {{ post.created }}</p>
 
+<!-- 店の詳細ページへのリンク -->
+{% if shop %}
+    <a href="{% url 'mychat:shop_detail' shop.id %}">
+        {{ post.shop_name }}
+    </a>
+{% else %}
+    {{ post.shop_name }}
+{% endif %}
+
 <p><a href="{% url 'mychat:list' %}">一覧に戻る</a></p>
 
 </body>

@@ -18,4 +18,5 @@ urlpatterns = [
     path('write/', views.writeView, name='write'),
     path('list/', views.postListView, name='list'),
     path('detail/<int:post_id>/', views.postDetailView, name='detail'),
+    path('shop/<int:shop_id>/',views.shopDetailView, name='shop_detail'),
 ]

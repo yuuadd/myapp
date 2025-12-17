@@ -14,6 +14,9 @@
                 <h3>{{ post.shop_name }}</h3>
                 <p>ジャンル：{{ post.genre }}</p>
                 <p>場所：{{ post.location }}</p>
+                <p>定休日：{{ post.rest }}</p>
+                <p>営業時間：{{ post.time }}</p>
+                <p>電話番号：{{ post.tel }}</p>
 
                 {% if post.photo %}
                     <img src="{{ post.photo.url }}" width="200">

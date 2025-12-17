@@ -32,6 +32,7 @@ class Post(models.Model):
         return self.shop_name
 
 #店の詳細情報のクラス
+#店の名前、ジャンル、場所、定休日、営業時間、電話番号の登録
 class Shop(models.Model):
     name = models.CharField(max_length=100, unique=True)
     genre = models.CharField(max_length=100)

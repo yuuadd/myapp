@@ -2,14 +2,11 @@ from django.shortcuts import render, redirect
 from .models import User, Room
 from .models import Post
 from .models import Shop
-import urllib.parse
 
 
 def startView(request):
     return render(request, 'start.html')
 
-
-#ユーザ登録処理
 def createUser(request):
     error_messages = []
 
@@ -42,8 +39,6 @@ def createUser(request):
     }
     return render(request, "signup.html", context)
 
-
-#ログイン処理を行う関数
 def loginView(request):
     error_messages = []
 
@@ -99,7 +94,7 @@ def loginView(request):
 
     #クッキーにユーザ名を設定してメイン画面へ
     response = redirect('mychat:main')
-    response.set_cookie('USER', urllib.parse.quote(user_name))
+    response.set_cookie('USER', user_name)
     return response
 
 def main(request):
@@ -114,69 +109,47 @@ def recomView(request):
 def searchView(request):
     return render(request, 'search.html')
 
-# views.py
 def postView(request):
-    # 初期データを直接追加（存在チェックあり）
-    initial_shops = [
-        {"name": "赤坂ラーメン", "genre": "ラーメン", "location": "東京都港区赤坂"},
-        {"name": "新宿カフェ", "genre": "カフェ", "location": "東京都新宿区"},
-        {"name": "渋谷寿司", "genre": "寿司", "location": "東京都渋谷区"},
-    ]
-
-    for shop in initial_shops:
-        if not Shop.objects.filter(name=shop["name"]).exists():
-            Shop.objects.create(**shop)
-
-    shops = Shop.objects.all()
-    back_to = request.GET.get("from", "main")
-    return render(request, "write.html", {
-        "shops": shops,
-        "back_to": back_to,
-    })
+    return render(request, 'post.html')
 
 def resultView(request):
     if request.method == "POST":
         shop_name = request.POST.get('shop_name')
         genre = request.POST.get('genre')
-        location = request.POST.get('location')
-        photo = request.FILES.get('photo')  # ←ここ重要
+        location = request.POST.get('location', '')
+        photo = request.FILES.get('photo')
         menu = request.POST.get('menu')
-        visited_date = request.POST.get('visited_date')
 
         user_name = request.COOKIES.get('USER')
-        user_obj = None
-        if user_name:
-            try:
-                user_obj = User.objects.get(name=user_name)
-            except User.DoesNotExist:
-                pass
+        user_obj = User.objects.filter(name=user_name).first() if user_name else None
 
-        post = Post.objects.create(
+        Post.objects.create(
             user=user_obj,
             shop_name=shop_name,
             genre=genre,
             location=location,
             photo=photo,
             menu=menu,
-            visited_date=visited_date if visited_date else None
         )
 
-        return render(request, 'result.html', {'post': post})
+        return redirect('mychat:list')
 
-    return redirect('mychat:result')
+    return redirect('mychat:write')
+
 
 def writeView(request):
     # ここでも初期データ追加して shops 取得する必要がある
     initial_shops = [
-        {"name": "赤坂ラーメン", "genre": "ラーメン", "location": "東京都港区赤坂"},
-        {"name": "新宿カフェ", "genre": "カフェ", "location": "東京都新宿区"},
-        {"name": "渋谷寿司", "genre": "寿司", "location": "東京都渋谷区"},
+        {"name": "サイノ", "genre": "カレー", "location": "室蘭", "rest": "不定休", "time": "11時00分~15時00分,17時00分~22時00分", "tel":"0143-83-6298"},
+        {"name": "アスコット", "genre": "レストラン", "location": "室蘭", "rest": "木曜日", "time": "11時30分~14時30分,17時30分~20時30分", "tel": "0143-44-1560"},
+        {"name": "一平", "genre": "焼き鳥", "location": "室蘭", "rest": "不定休", "time": "11時00分~14時00分,17時00分~22時00分", "tel": "0143-41-0550"},
+        
     ]
     for shop in initial_shops:
         if not Shop.objects.filter(name=shop["name"]).exists():
             Shop.objects.create(**shop)
 
-    shops = list(Shop.objects.all().values("name", "genre", "location"))
+    shops = list(Shop.objects.all().values("name", "genre", "location","rest","time","tel"))
     
     back_to = request.GET.get("from", "main")
     return render(request, "write.html", {
@@ -189,9 +162,11 @@ def postListView(request):
     return render(request, 'post_list.html', {"posts": posts})
 
 def postDetailView(request, post_id):
-    try:
-        post = Post.objects.get(id=post_id)
-    except Post.DoesNotExist:
-        return redirect('mychat:list')  # 無ければ一覧へ戻す
+    post = Post.objects.get(id=post_id)
+    shop = Shop.objects.filter(name=post.shop_name).first()
 
-    return render(request, 'post_detail.html', {"post": post})
+    return render(request, 'post_detail.html', {
+        "post": post,
+        "shop": shop,
+    })
+

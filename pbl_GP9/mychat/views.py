@@ -1,12 +1,14 @@
 from django.shortcuts import render, redirect
-from .models import User, Room
-from .models import Post
-from .models import Shop
+from .models import User, Room,Post,Shop
+#検索用にモジュール追加
+from django.db.models import Q
 
 
 def startView(request):
     return render(request, 'start.html')
 
+
+#ユーザ登録処理
 def createUser(request):
     error_messages = []
 
@@ -39,6 +41,8 @@ def createUser(request):
     }
     return render(request, "signup.html", context)
 
+
+#ログイン投稿処理
 def loginView(request):
     error_messages = []
 
@@ -97,6 +101,7 @@ def loginView(request):
     response.set_cookie('USER', user_name)
     return response
 
+
 def main(request):
     return render(request, 'main.html')
 
@@ -106,12 +111,44 @@ def mapView(request):
 def recomView(request):
     return render(request, 'recom.html')
 
+#検索機能の実装
 def searchView(request):
-    return render(request, 'search.html')
+    #検索ワードを取得する文字列。空白で区切る
+    #おそらく大半の人は空白が全角スペースになると思うので、全角スペースも考慮
+    raw = request.GET.get("search", "")   
+    #例：「ラーメン　中島」⇒「ラーメン,中島」
+    keyword = raw.replace("　", " ").strip().split()
+   
+    #検索ワードが含まれる投稿を取得
+    #投稿がないい場合はメッセージ表示(html側で実装)
+    posts = Post.objects.none()
+    #店名、ジャンル、場所のいずれかに検索ワードが含まれれば良い
+    if keyword:
+        #条件をセット
+        conditions = Q()
+        #キーワードごとに条件に合致する店を創作
+        for word in keyword:
+            conditions |=(
+            Q(shop_name__icontains=word) |
+            Q(genre__icontains=word) |
+            Q(location__icontains=word) |
+            Q(menu__icontains=word)
+            )
+        posts = Post.objects.filter(conditions).order_by('-created')
+            
+    # 検索結果を表示
+    #postは投稿一覧、qは検索ワード
+    print("検索ワード:", keyword)
+    print("全投稿:", list(Post.objects.values()))
+    return render(request, 'search.html', {
+        "posts": posts,
+        "q":keyword,
+        })
 
 def postView(request):
     return render(request, 'post.html')
 
+#
 def resultView(request):
     if request.method == "POST":
         shop_name = request.POST.get('shop_name')
@@ -136,9 +173,9 @@ def resultView(request):
 
     return redirect('mychat:write')
 
-
+# 投稿編集画面表示
 def writeView(request):
-    # ここでも初期データ追加して shops 取得する必要がある
+    # shop表示用の初期データ
     initial_shops = [
         {"name": "サイノ", "genre": "カレー", "location": "室蘭", "rest": "不定休", "time": "11時00分~15時00分,17時00分~22時00分", "tel":"0143-83-6298"},
         {"name": "アスコット", "genre": "レストラン", "location": "室蘭", "rest": "木曜日", "time": "11時30分~14時30分,17時30分~20時30分", "tel": "0143-44-1560"},
@@ -157,10 +194,14 @@ def writeView(request):
         "back_to": back_to,
     })
 
+
+# 投稿一覧表示用画面
 def postListView(request):
     posts = Post.objects.order_by('-created')  # 新しい順に並べる
     return render(request, 'post_list.html', {"posts": posts})
 
+
+# 投稿された店の詳細を表示する
 def postDetailView(request, post_id):
     post = Post.objects.get(id=post_id)
     shop = Shop.objects.filter(name=post.shop_name).first()

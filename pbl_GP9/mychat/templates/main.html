@@ -7,11 +7,17 @@
 </head>
 <body>
     <h1>ホーム</h1>
-    <p><a href="{% url 'mychat:search' %}">検索</a></p>
+
+    <p><form method="get" action="{% url 'mychat:search' %}">
+    <input type="text" name="search" placeholder="キーワードを入力してください" >
+    <input type="submit" value="検索">
+    </form>
+</p>
+
     <p><a href="{% url 'mychat:write' %}">投稿</a></p>
     <p><a href="{% url 'mychat:recom' %}">新着</a></p>
     <p><a href="{% url 'mychat:map' %}">マップ</a></p>
-    <p><a href="{% url 'mychat:list' %}">投稿一覧</a></p>
+    <p><a href="{% url 'mychat:list' %}">あなたの投稿</a></p>
 
 
 </body>

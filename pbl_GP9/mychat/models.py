@@ -7,7 +7,7 @@ class Room(models.Model):
     def __str__(self):
         return self.name
 
-
+#ユーザのクラス
 class User(models.Model):
     name = models.CharField(max_length=20)
     password = models.CharField(max_length=20)
@@ -17,7 +17,8 @@ class User(models.Model):
     def __str__(self):
         return self.name
 
-
+#投稿のクラス
+#店名、ジャンル、場所、写真、メニュー、投稿日時
 class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     shop_name = models.CharField(max_length=100)
@@ -30,6 +31,7 @@ class Post(models.Model):
     def __str__(self):
         return self.shop_name
 
+#店の詳細情報のクラス
 class Shop(models.Model):
     name = models.CharField(max_length=100, unique=True)
     genre = models.CharField(max_length=100)

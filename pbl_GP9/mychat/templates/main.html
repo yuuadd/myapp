@@ -1,24 +1,290 @@
 <!DOCTYPE html>
-<!--ホーム画面-->
-<html>
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>ホーム画面</title>
+{% load static %}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>室蘭 食べログ - ホーム</title>
+
+<style>
+body {
+    margin: 0;
+    background: #fafafa;
+    font-family: "Hiragino Kaku Gothic ProN","メイリオ",sans-serif;
+}
+
+/* ==== ヘッダー ==== */
+.header {
+    width: 100%;
+    padding: 15px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 900;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* ==== 検索バー ==== */
+.search-area {
+    width: 90%;
+    max-width: 600px;
+    margin: 20px auto;
+    background: white;
+    padding: 12px 16px;
+    display: flex;
+    border-radius: 40px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+.search-input {
+    flex: 1;
+    font-size: 18px;
+    border: none;
+    outline: none;
+}
+.search-btn {
+    font-size: 22px;
+    border: none;
+    background: none;
+}
+.search-btn:active {
+    transform: scale(0.9);
+}
+
+/* ==== スライダー ==== */
+.slider-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    height: 60vh;
+    margin: 30px auto 100px auto;
+    overflow: hidden;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    background: #000;
+}
+
+/* 基本 */
+.slider-img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: transform .45s ease, opacity .45s ease;
+}
+
+/* 表示中 */
+.slider-img.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* 次へ：右から入る待機位置 */
+.slider-img.from-right {
+    transform: translateX(100%);
+}
+
+/* 前へ：左から入る待機位置 */
+.slider-img.from-left {
+    transform: translateX(-100%);
+}
+
+/* 左へ消える（次へ進むときの現在画像） */
+.slider-img.exit-left {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+/* 右へ消える（前へ戻るときの現在画像） */
+.slider-img.exit-right {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+/* 矢印 */
+.slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.35);
+    cursor: pointer;
+    user-select: none;
+}
+.slider-btn.left { left: 10px; }
+.slider-btn.right { right: 10px; }
+
+/* ==== フッター ==== */
+.footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 65px;
+    background: white;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.footer a {
+    text-decoration: none;
+    color: #444;
+}
+
+.footer-posts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 24px;
+}
+
+.footer-posts span {
+    font-size: 10px;
+}
+</style>
 </head>
+
 <body>
-    <h1>ホーム</h1>
 
-    <p><form method="get" action="{% url 'mychat:search' %}">
-    <input type="text" name="search" placeholder="キーワードを入力してください" >
-    <input type="submit" value="検索">
-    </form>
-</p>
+<div class="header">室蘭 食べログ</div>
 
-    <p><a href="{% url 'mychat:write' %}">投稿</a></p>
-    <p><a href="{% url 'mychat:recom' %}">新着</a></p>
-    <p><a href="{% url 'mychat:map' %}">マップ</a></p>
-    <p><a href="{% url 'mychat:list' %}">あなたの投稿</a></p>
+<!-- 検索フォーム -->
+<form action="{% url 'mychat:search' %}" method="get">
+    <div class="search-area">
+        <input type="text" name="search" class="search-input" placeholder="店名・料理名で検索">
+        <button class="search-btn">🔍</button>
+    </div>
+</form>
 
+<!-- スライダー -->
+<div class="slider-container" id="slider">
+    <div class="slider-btn left" id="btnPrev">‹</div>
+    <div class="slider-btn right" id="btnNext">›</div>
+</div>
+
+<!-- フッター -->
+<div class="footer">
+    <a href="{% url 'mychat:main' %}">🏠</a>
+    <a href="{% url 'mychat:search' %}">🔍</a>
+    <a href="{% url 'mychat:write' %}">➕</a>
+    <a href="{% url 'mychat:list' %}" class="footer-posts">
+        📝<span>あなたの投稿</span>
+    </a>
+</div>
+
+<script>
+/* === 画像リスト === */
+const imageUrls = [
+    "{% static 'mychat/33658040_s.jpg' %}",
+    "{% static 'mychat/food2.jpg' %}",
+    "{% static 'mychat/food2.jpg' %}",
+    "{% static 'mychat/hannba-gu.jpg' %}",
+    "{% static 'mychat/33387965_s.jpg' %}",
+    "{% static 'mychat/33465212_s.jpg' %}"
+];
+
+/* === スライダー初期化 === */
+const slider = document.getElementById('slider');
+const btnPrev = document.getElementById('btnPrev');
+const btnNext = document.getElementById('btnNext');
+
+let currentIndex = 0;
+const slides = [];
+
+/* 画像生成（最初は active） */
+imageUrls.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.className = 'slider-img';
+    if (i === 0) img.classList.add('active');
+    slider.appendChild(img);
+    slides.push(img);
+});
+
+/* 方向付きで表示切り替え */
+function showSlide(nextIndex, direction) {
+    if (nextIndex === currentIndex) return;
+
+    const current = slides[currentIndex];
+    const next = slides[nextIndex];
+
+    // 次の画像の初期位置（入ってくる方向）
+    next.classList.remove('from-left', 'from-right', 'exit-left', 'exit-right', 'active');
+    if (direction === 'right') {
+        next.classList.add('from-right');
+    } else {
+        next.classList.add('from-left');
+    }
+
+    // 強制再描画（アニメ確実にする）
+    next.offsetHeight;
+
+    // 現在画像を押し出す（出ていく方向）
+    current.classList.remove('exit-left', 'exit-right');
+    if (direction === 'right') {
+        current.classList.add('exit-left');
+    } else {
+        current.classList.add('exit-right');
+    }
+    current.classList.remove('active');
+
+    // 次画像を表示
+    next.classList.add('active');
+    next.classList.remove('from-left', 'from-right');
+
+    currentIndex = nextIndex;
+}
+
+/* 次へ（右から入る） */
+function nextSlide() {
+    const next = (currentIndex + 1) % slides.length;
+    showSlide(next, 'right');
+}
+
+/* 前へ（左から入る） */
+function prevSlide() {
+    const next = (currentIndex - 1 + slides.length) % slides.length;
+    showSlide(next, 'left');
+}
+
+/* ボタン操作（スライダークリックと干渉させない） */
+btnNext.addEventListener('click', (e) => { e.stopPropagation(); nextSlide(); });
+btnPrev.addEventListener('click', (e) => { e.stopPropagation(); prevSlide(); });
+
+/* スワイプ操作（スマホ） */
+let startX = 0;
+slider.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+});
+slider.addEventListener('touchend', e => {
+    const endX = e.changedTouches[0].clientX;
+    const diff = startX - endX;
+    if (diff > 50) nextSlide();       // 左スワイプ → 次（右から入る）
+    else if (diff < -50) prevSlide(); // 右スワイプ → 前（左から入る）
+});
+
+/* クリックでスライド（左右半分で方向も変える） */
+slider.addEventListener('click', (e) => {
+    if (e.target.classList.contains('slider-btn')) return;
+
+    const rect = slider.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+
+    if (x < rect.width / 2) {
+        prevSlide(); // 左半分クリック → 左から入る
+    } else {
+        nextSlide(); // 右半分クリック → 右から入る
+    }
+});
+</script>
 
 </body>
 </html>
+

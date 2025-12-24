@@ -1,8 +1,7 @@
 from django.shortcuts import render, redirect
-from .models import User, Room
-from .models import Post
-from .models import Shop
-import urllib.parse
+from .models import User, Room,Post,Shop
+#検索用にモジュール追加
+from django.db.models import Q
 
 
 def startView(request):
@@ -43,7 +42,7 @@ def createUser(request):
     return render(request, "signup.html", context)
 
 
-#ログイン処理を行う関数
+#ログイン投稿処理
 def loginView(request):
     error_messages = []
 
@@ -99,10 +98,41 @@ def loginView(request):
 
     #クッキーにユーザ名を設定してメイン画面へ
     response = redirect('mychat:main')
-    response.set_cookie('USER', urllib.parse.quote(user_name))
+    response.set_cookie('USER', user_name)
     return response
 
+
 def main(request):
+    
+    # Shop表示用の初期データを作成
+    initial_shops = [
+        {"name": "竹よし ラーメンハウス",
+         "genre": "ラーメン店、ランチ、ディナー",
+         "location": "宮の森町3丁目9-4",
+         "rest": "月曜日",
+         "time": "11時00分~15時20分,17時00分~20時20分",
+         "tel":"0143-47-2888"},
+        
+        {"name": "やきとりの一平 學亭",
+         "genre": "焼き鳥店、ランチ、ディナー",
+         "location": "高砂町5丁目6-17 コーポ5in 1F",
+         "rest": "不定休",
+         "time": "11時00分~14時00分,17時00分~22時00分",
+         "tel": "0143-41-0550"},
+        
+        {"name": "焼肉徳寿 室蘭店",
+         "genre": "焼肉店、ランチ、ディナー",
+         "location": "中島本町1丁目6-3",
+         "rest": "不定休",
+         "time": "(日～金)11時00分~22時30分、(土)11時00分~23時00分",
+         "tel": "0143-41-1129"},
+        
+    ]
+    for shop in initial_shops:
+        # データベースに店が存在しない場合のみ登録
+        if not Shop.objects.filter(name=shop["name"]).exists():
+            Shop.objects.create(**shop)
+    
     return render(request, 'main.html')
 
 def mapView(request):
@@ -111,87 +141,104 @@ def mapView(request):
 def recomView(request):
     return render(request, 'recom.html')
 
+#検索機能の実装
 def searchView(request):
-    return render(request, 'search.html')
+    #検索ワードを取得する文字列。空白で区切る
+    #おそらく大半の人は空白が全角スペースになると思うので、全角スペースも考慮
+    raw = request.GET.get("search", "")   
+    #例：「ラーメン　中島」⇒「ラーメン,中島」
+    keyword = raw.replace("　", " ").strip().split()
+   
+    #検索ワードが含まれる投稿を取得
+    #投稿がないい場合はメッセージ表示(html側で実装)
+    posts = Post.objects.none()
+    #店名、ジャンル、場所のいずれかに検索ワードが含まれれば良い
+    if keyword:
+        #条件をセット
+        conditions = Q()
+        #キーワードごとに条件に合致する店を創作
+        for word in keyword:
+            conditions |=(
+            Q(shop_name__icontains=word) |
+            Q(genre__icontains=word) |
+            Q(location__icontains=word) |
+            Q(menu__icontains=word)
+            )
+        posts = Post.objects.filter(conditions).order_by('-created')
+            
+    # 検索結果を表示
+    #postは投稿一覧、qは検索ワード
+    return render(request, 'search.html', {
+        "posts": posts,
+        "q":keyword,
+        })
 
-# views.py
 def postView(request):
-    # 初期データを直接追加（存在チェックあり）
-    initial_shops = [
-        {"name": "赤坂ラーメン", "genre": "ラーメン", "location": "東京都港区赤坂"},
-        {"name": "新宿カフェ", "genre": "カフェ", "location": "東京都新宿区"},
-        {"name": "渋谷寿司", "genre": "寿司", "location": "東京都渋谷区"},
-    ]
+    return render(request, 'post.html')
 
-    for shop in initial_shops:
-        if not Shop.objects.filter(name=shop["name"]).exists():
-            Shop.objects.create(**shop)
-
-    shops = Shop.objects.all()
-    back_to = request.GET.get("from", "main")
-    return render(request, "write.html", {
-        "shops": shops,
-        "back_to": back_to,
-    })
-
+#
 def resultView(request):
     if request.method == "POST":
         shop_name = request.POST.get('shop_name')
         genre = request.POST.get('genre')
-        location = request.POST.get('location')
-        photo = request.FILES.get('photo')  # ←ここ重要
+        location = request.POST.get('location', '')
+        photo = request.FILES.get('photo')
         menu = request.POST.get('menu')
-        visited_date = request.POST.get('visited_date')
 
         user_name = request.COOKIES.get('USER')
-        user_obj = None
-        if user_name:
-            try:
-                user_obj = User.objects.get(name=user_name)
-            except User.DoesNotExist:
-                pass
+        user_obj = User.objects.filter(name=user_name).first() if user_name else None
 
-        post = Post.objects.create(
+        Post.objects.create(
             user=user_obj,
             shop_name=shop_name,
             genre=genre,
             location=location,
             photo=photo,
             menu=menu,
-            visited_date=visited_date if visited_date else None
         )
 
-        return render(request, 'result.html', {'post': post})
+        return redirect('mychat:list')
 
-    return redirect('mychat:result')
+    return redirect('mychat:write')
 
+# 投稿編集画面表示
 def writeView(request):
-    # ここでも初期データ追加して shops 取得する必要がある
-    initial_shops = [
-        {"name": "赤坂ラーメン", "genre": "ラーメン", "location": "東京都港区赤坂"},
-        {"name": "新宿カフェ", "genre": "カフェ", "location": "東京都新宿区"},
-        {"name": "渋谷寿司", "genre": "寿司", "location": "東京都渋谷区"},
-    ]
-    for shop in initial_shops:
-        if not Shop.objects.filter(name=shop["name"]).exists():
-            Shop.objects.create(**shop)
 
-    shops = list(Shop.objects.all().values("name", "genre", "location"))
+    # 登録されている店の一覧を取得
+    shops = list(Shop.objects.all().values(
+        "name", "genre", "location","rest","time","tel"
+    ))
     
+    # 戻り先URLを取得（デフォルトは'main'）
     back_to = request.GET.get("from", "main")
     return render(request, "write.html", {
         "shops": shops,
         "back_to": back_to,
     })
 
+
+# 投稿一覧表示用画面
 def postListView(request):
     posts = Post.objects.order_by('-created')  # 新しい順に並べる
     return render(request, 'post_list.html', {"posts": posts})
 
-def postDetailView(request, post_id):
-    try:
-        post = Post.objects.get(id=post_id)
-    except Post.DoesNotExist:
-        return redirect('mychat:list')  # 無ければ一覧へ戻す
 
-    return render(request, 'post_detail.html', {"post": post})
+# 投稿された投稿の詳細を表示する
+def postDetailView(request, post_id):
+    # 投稿情報を取得
+    post = Post.objects.get(id=post_id)
+    # 投稿された店の詳細情報を取得
+    shop = Shop.objects.filter(name=post.shop_name).first()
+
+    return render(request, 'post_detail.html', {
+        "post": post,
+        "shop": shop,
+    })
+
+def shopDetailView(request, shop_id):
+    # 店の詳細情報を取得
+    shop = Shop.objects.get(id=shop_id)
+
+    return render(request, 'shop_detail.html', {
+        "shop": shop,
+    })

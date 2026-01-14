@@ -46,61 +46,43 @@ def createUser(request):
 def loginView(request):
     error_messages = []
 
-    #クッキーからユーザ名を取得
-    cookie_user = request.COOKIES.get('USER')
-    if cookie_user:
+    # すでにログイン済みなら main へ（Cookie: USER_ID）
+    cookie_user_id = request.COOKIES.get('USER_ID')
+    if cookie_user_id:
         try:
-            user_obj = User.objects.get(name=cookie_user)
+            user_obj = User.objects.get(id=int(cookie_user_id))
             if user_obj.islogin:
-                #   ログイン中ならメイン画面へ
-                response = redirect('mychat:main')
-                return response
-            else:
-                #   ログイン状態 False の場合クッキー削除
-                response = redirect('mychat:login')
-                response.delete_cookie('USER')
-                return response
-        except User.DoesNotExist:
-            response = redirect('mychat:login')
-            response.delete_cookie('USER')
-            return response
+                return redirect('mychat:main')
+        except (User.DoesNotExist, ValueError):
+            pass
 
-    #フォームデータ取得
-    user_name = request.POST.get('name', '').strip()
-    password = request.POST.get('password', '').strip()
-    login_flag = request.POST.get('login', 'off')
-
-    #ログインフラグが on でない場合、ログイン画面に戻る
-    if login_flag != "on":
+    # GETはログイン画面
+    if request.method != "POST":
         return render(request, "login.html")
 
-    #入力チェック
-    if not user_name:
-        error_messages.append("ユーザ名が入力されていません")
-    if not password:
-        error_messages.append("パスワードが入力されていません")
+    # POST（ログイン処理）
+    user_name = request.POST.get('name', '').strip()
+    password = request.POST.get('password', '').strip()
 
-    #入力エラーがある場合
+    if not user_name:
+        error_messages.append("ユーザ名が入力されていません。")
+    if not password:
+        error_messages.append("パスワードが入力されていません。")
     if error_messages:
         return render(request, "login.html", {'error_messages': error_messages})
 
-    #データベースから一致するユーザ情報を取得
     try:
         user_obj = User.objects.get(name=user_name, password=password)
     except User.DoesNotExist:
-        #一致しない場合
-        error_messages.append("ユーザ名、パスワードが一致しません")
+        error_messages.append("ユーザ名またはパスワードが違います。")
         return render(request, "login.html", {'error_messages': error_messages})
 
-    #ログイン状態を True に更新
     user_obj.islogin = True
     user_obj.save()
 
-    #クッキーにユーザ名を設定してメイン画面へ
     response = redirect('mychat:main')
-    response.set_cookie('USER', user_name)
+    response.set_cookie('USER_ID', str(user_obj.id))  # 日本語名でもOK
     return response
-
 
 def main(request):
     

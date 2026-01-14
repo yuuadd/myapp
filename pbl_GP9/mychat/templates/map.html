@@ -1,12 +1,85 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>マップ</title>
-</head>
-<body>
-    <h1>マップ</h1>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Map</title>
 
-    <p><a href="{% url 'mychat:main' %}">戻る</a></p>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: #fafafa;
+      font-family: "Hiragino Kaku Gothic ProN","メイリオ",sans-serif;
+    }
+
+    .back-btn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: white;
+      padding: 8px 14px;
+      border-radius: 20px;
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .back-btn:active { transform: scale(0.95); }
+
+    h2 { margin: 12px; padding-top: 6px; }
+
+    #map {
+      height: calc(100vh - 60px); /* 見出し分だけ少し引く */
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <a href="{% url 'mychat:main' %}" class="back-btn">← 戻る</a>
+  <h2>店舗マップ</h2>
+  <div id="map"></div>
+
+  <script>
+    // 初期位置（室蘭工大付近）
+    const map = L.map("map").setView([42.3785252,141.0320172], 14);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+
+    // ===== 店舗ピン（Djangoから渡されたmarkersを使う）=====
+    const markers = {{ markers|default:"[]"|safe }};
+
+    markers.forEach(m => {
+      L.marker([m.lat, m.lng])
+        .addTo(map)
+        .bindPopup(`
+          <b>${m.name}</b><br>
+          ${m.genre}<br>
+          ${m.location}<br>
+          <a href="${m.url}">詳細を見る</a>
+        `);
+    });
+
+    // ===== 現在地 =====
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          L.circleMarker([lat, lng], {radius: 8})
+            .addTo(map)
+            .bindPopup("現在地");
+        },
+        () => {}
+      );
+    }
+  </script>
 </body>
 </html>

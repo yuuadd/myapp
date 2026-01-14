@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import Shop
 
-admin.site.register(Shop)
-# Register your models here.
+@admin.register(Shop)
+class ShopAdmin(admin.ModelAdmin):
+    list_display = ("name", "genre", "location", "lat", "lng")
+    search_fields = ("name", "genre", "location")

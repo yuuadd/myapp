@@ -41,5 +41,7 @@ class Shop(models.Model):
     time = models.CharField(max_length=100, blank=True, default="")
     tel = models.CharField(max_length=100, blank=True, default="")
 
+    lat = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    lng = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
     def __str__(self):
         return self.name

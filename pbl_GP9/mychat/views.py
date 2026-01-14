@@ -1,8 +1,78 @@
+import time
+import requests
 from django.shortcuts import render, redirect
 from .models import User, Room,Post,Shop
+from django.urls import reverse
 #検索用にモジュール追加
 from django.db.models import Q
 
+import re
+
+def normalize_address(s: str) -> str:
+    if not s:
+        return s
+    # 全角数字→半角
+    s = s.translate(str.maketrans("０１２３４５６７８９", "0123456789"))
+    # 全角/特殊ハイフン→半角ハイフン
+    s = s.replace("−", "-").replace("ー", "-").replace("―", "-").replace("–", "-")
+    # 全角スペース→半角、余分な空白を整理
+    s = s.replace("　", " ")
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def geocode_address(address: str):
+    """
+    OpenStreetMap Nominatimで住所 -> (lat, lng)
+    失敗したら (None, None)
+    """
+    if not address or not address.strip():
+        return None, None
+
+    base = "https://nominatim.openstreetmap.org/search"
+
+    # 住所の表記ゆれを潰す
+    normalized = normalize_address(address)
+
+    # 失敗しやすいので、複数パターンで試す（上から順に）
+    queries = []
+    queries.append(normalized)
+    if not normalized.startswith("日本"):
+        queries.append("日本 " + normalized)
+    # 町丁目の「丁目」を落としてみる（検索が通ることがある）
+    queries.append(normalized.replace("丁目", ""))
+    # ハイフンをスペースに（番地の解釈が変わることがある）
+    queries.append(normalized.replace("-", " "))
+
+    headers = {
+        # NominatimはUser-Agent必須
+        "User-Agent": "muroran-tabelog/1.0",
+    }
+
+    for q in queries:
+        # 叩きすぎ防止（最低1秒）
+        time.sleep(1.0)
+
+        params = {
+            "format": "json",
+            "q": q,
+            "limit": 1,
+            "countrycodes": "jp",        # 日本に絞る
+            "accept-language": "ja",     # 日本語優先
+        }
+
+        try:
+            r = requests.get(base, params=params, headers=headers, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+            if data:
+                lat = float(data[0]["lat"])
+                lng = float(data[0]["lon"])
+                return lat, lng
+        except Exception:
+            # 例外は次の候補へ（本番ではログ出してもOK）
+            continue
+
+    return None, None
 
 def startView(request):
     return render(request, 'start.html')
@@ -136,7 +206,21 @@ def main(request):
     return render(request, 'main.html')
 
 def mapView(request):
-    return render(request, 'map.html')
+    shops = Shop.objects.exclude(lat__isnull=True).exclude(lng__isnull=True)
+
+    markers = []
+    for s in shops:
+        markers.append({
+            "id": s.id,
+            "name": s.name,
+            "lat": float(s.lat),
+            "lng": float(s.lng),
+            "genre": s.genre,
+            "location": s.location,
+            "url": reverse("mychat:shop_detail", kwargs={"shop_id": s.id}),
+        })
+
+    return render(request, "map.html", {"markers": markers})
 
 def recomView(request):
     return render(request, 'recom.html')
@@ -188,6 +272,33 @@ def resultView(request):
         user_name = request.COOKIES.get('USER')
         user_obj = User.objects.filter(name=user_name).first() if user_name else None
 
+        # ====== 追加：Shop を作る（なければ作成）======
+        shop, created = Shop.objects.get_or_create(
+            name=shop_name,
+            defaults={"genre": genre, "location": location}
+        )
+
+        # 必要ならShop情報を更新（投稿側が最新という扱い）
+        updated = False
+        if genre and shop.genre != genre:
+            shop.genre = genre
+            updated = True
+        if location and shop.location != location:
+            shop.location = location
+            updated = True
+
+        # lat/lng が無ければ住所から自動取得
+        if shop.lat is None or shop.lng is None:
+            lat, lng = geocode_address(shop.location)
+            if lat is not None and lng is not None:
+                shop.lat = lat
+                shop.lng = lng
+                updated = True
+
+        if updated:
+            shop.save()
+
+        # ====== 既存：Post を作る ======
         Post.objects.create(
             user=user_obj,
             shop_name=shop_name,
@@ -200,6 +311,8 @@ def resultView(request):
         return redirect('mychat:list')
 
     return redirect('mychat:write')
+
+
 
 # 投稿編集画面表示
 def writeView(request):
